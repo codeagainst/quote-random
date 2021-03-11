@@ -1,65 +1,84 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import styled from "styled-components";
+import Quote from "../components/Quote/Quote.js";
+import RandomButton from "../components/RandomButton/RandomButton";
+import AuthorName from "../components/AuthorName/AuhorName.js";
+import { useState } from "react";
+import Link from "next/link";
 
-export default function Home() {
+const HomeWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 25px 100px;
+  position: relative;
+`;
+
+export default function Home({ data }) {
+  const [loading, setLoading] = useState(false);
+  const [quoteData, setQuoteData] = useState(data.data[0]);
+
+  const newQuote = async () => {
+    const res = await fetch(
+      "https://quote-garden.herokuapp.com/api/v3/quotes/random"
+    );
+    const data = await res.json();
+    setQuoteData(data.data[0]);
+    setLoading(false);
+  };
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
+    <HomeWrapper>
+      <RandomButton
+        disabled={loading ? true : false}
+        onClick={() => {
+          newQuote();
+          setLoading(true);
+        }}
+      />
+      <div
+        style={
+          loading
+            ? {
+                opacity: "0.5",
+                filter: "blur(2px)",
+                transition: ".3s ease all",
+              }
+            : {}
+        }
+      >
+        <Quote quoteText={quoteData.quoteText} />
+        <Link href={"/author/" + quoteData.quoteAuthor.toLowerCase()}>
           <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+            onClick={() => {
+              setLoading(true);
+            }}
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
+            <AuthorName
+              name={quoteData.quoteAuthor}
+              genre={quoteData.quoteGenre}
+              marginTop={"140px"}
+              isLink={true}
+            />
           </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+        </Link>
+      </div>
+      <div style={{ marginTop: "50px" }}>
+        created by CodeAgainst - devChallanges.io
+      </div>
+    </HomeWrapper>
+  );
 }
+
+export const getServerSideProps = async () => {
+  const res = await fetch(
+    "https://quote-garden.herokuapp.com/api/v3/quotes/random"
+  );
+  const data = await res.json();
+
+  return {
+    props: {
+      data,
+    },
+  };
+};
